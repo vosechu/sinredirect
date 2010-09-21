@@ -1,3 +1,4 @@
 source "http://rubygems.org"
 gem "sinatra"
-gem "curb"
+gem "nokogiri"
+gem "mechanize"

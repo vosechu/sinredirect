@@ -27,9 +27,7 @@ def download_body url, domain, ip
   end
   content_type res.content_type
   
-  # TODO: Make appended url relative to whatever server it was accessed on
   # TODO: Support SSL
-  # TODO: Fix ajax
   # Make sure that relative urls without the slash get one appended
   res.body.gsub!(/(src=|href=)(["'])([^\/(http)][^"]+)"/, '\1\2/\3"')
   

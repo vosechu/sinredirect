@@ -10,6 +10,8 @@ require 'net/http'
 require 'pp'
 require 'ruby-debug'
 
+enable :sessions
+
 get '/internal/:domain/:ip' do |domain, ip|
   url = URI.parse('http://' + ip + '/')
   return singet url, domain, ip
@@ -31,20 +33,25 @@ def singet url, domain, ip, limit=10
   
   req = Net::HTTP::Get.new(url.path)
   req.add_field("Host", domain)
+  req.add_field('Cookie', session[:sin]) if session[:sin]
   res = Net::HTTP.new(url.host, url.port).start do |http|
     http.request(req)
   end
   content_type res.content_type
   
+  session[:sin] = res.response['set-cookie']
+
   case res
   when Net::HTTPSuccess     then transform_response res.body
-  when Net::HTTPRedirection then singet(URI.parse('http://' + ip + '/' + res['location']), domain, ip, limit - 1)
+  when Net::HTTPRedirection then singet(URI.parse('http://' + ip + res['location'].gsub(request.env['rack.url_scheme'] + '://' + domain, '')), domain, ip, limit - 1)
+  else transform_response res.body
   end
 end
 
 def sinpost url, domain, ip, form_vars
   req = Net::HTTP::Post.new(url.path)
   req.add_field("Host", domain)
+  req.add_field('Cookie', session[:sin]) if session[:sin]
   
   # Mangle the form variables from query string to a hash for Net::HTTP
   form_vars = form_vars.split('&').inject({}) {|memo,v| memo.merge({v.split('=').first => v.split('=').last}) }
@@ -53,10 +60,12 @@ def sinpost url, domain, ip, form_vars
     http.request(req)
   end
   content_type res.content_type
-  
+  session[:sin] = res.response['set-cookie']
+
   case res
   when Net::HTTPSuccess     then transform_response res.body
-  when Net::HTTPRedirection then singet(URI.parse('http://' + ip + '/' + res['location']), domain, ip, 9)
+  when Net::HTTPRedirection then singet(URI.parse('http://' + ip + res['location'].gsub(request.env['rack.url_scheme'] + '://' + domain, '')), domain, ip, 9)
+  else transform_response res.body
   end
 end
 

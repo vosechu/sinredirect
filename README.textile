@@ -2,7 +2,7 @@ h2. Summary
 
 Runs on a gateway server and sets the Host header for a request so that you don't have to set up a route to an internal firewalled server. Sometimes setting up a proper path through your router and your load-balancer is too much of a pain in the ass.
 
-http://<gateway server>/internal/<domain for host header>/<ip of target machine>/<path>
+@http://<gateway server>/internal/<domain for host header>/<ip of target machine>/<path>@
 
 h2. Caveat
 

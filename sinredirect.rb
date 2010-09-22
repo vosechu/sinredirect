@@ -1,3 +1,6 @@
+# TODO: Support SSL
+# TODO: Make some sort of authentication scheme so it's not a wildly open proxy
+
 require 'rubygems'
 require 'bundler/setup'
 
@@ -27,7 +30,6 @@ def download_body url, domain, ip
   end
   content_type res.content_type
   
-  # TODO: Support SSL
   # Make sure that relative urls without the slash get one appended
   res.body.gsub!(/(src=|href=)(["'])([^\/(http)][^"]+)"/, '\1\2/\3"')
   

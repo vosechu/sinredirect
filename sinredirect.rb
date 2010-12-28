@@ -12,50 +12,51 @@ require 'ruby-debug'
 
 enable :sessions
 
-get '/internal/:domain/:ip' do |domain, ip|
+get '/internal/:ip/:domain' do |ip, domain|
   url = URI.parse('http://' + ip + '/')
-  return singet url, domain, ip
+  return singet url, ip, domain
 end
 
-get '/internal/:domain/:ip/*' do |domain, ip, q|
+get '/internal/:ip/:domain/*' do |ip, domain, q|
   url = URI.parse('http://' + ip + '/' + q)
-  return singet url, domain, ip
-end
+  return singet url, ip, domain
+enda
 
-post '/internal/:domain/:ip/*' do |domain, ip, q|
+post '/internal/:ip/:domain/*' do |ip, domain, q|
   url = URI.parse('http://' + ip + '/' + q)
-  return sinpost url, domain, ip, request.env['rack.request.form_vars']
+  return sinpost url, ip, domain, request.env['rack.request.form_vars']
 end
 
 
-def singet url, domain, ip, limit=10
+def singet url, ip, domain, limit=10
   raise ArgumentError, 'HTTP redirect too deep' if limit == 0
-  
+
   req = Net::HTTP::Get.new(url.path)
   req.add_field("Host", domain)
-  req.add_field('Cookie', session[:sin]) if session[:sin]
+  req.add_field('cookie', session[:sin]) if session[:sin]
   res = Net::HTTP.new(url.host, url.port).start do |http|
     http.request(req)
   end
   content_type res.content_type
   
-  session[:sin] = res.response['set-cookie']
+  session[:sin] = res.response['set-cookie'] if res.response['set-cookie']
 
   case res
   when Net::HTTPSuccess     then transform_response res.body
-  when Net::HTTPRedirection then singet(URI.parse('http://' + ip + res['location'].gsub(request.env['rack.url_scheme'] + '://' + domain, '')), domain, ip, limit - 1)
+  when Net::HTTPRedirection then singet(URI.parse('http://' + ip + res['location'].gsub(request.env['rack.url_scheme'] + '://' + domain, '')), ip, domain, limit - 1)
   else transform_response res.body
   end
 end
 
-def sinpost url, domain, ip, form_vars
+def sinpost url, ip, domain, form_vars
   req = Net::HTTP::Post.new(url.path)
   req.add_field("Host", domain)
-  req.add_field('Cookie', session[:sin]) if session[:sin]
-  
+  req.add_field('cookie', session[:sin]) if session[:sin]
+
   # Mangle the form variables from query string to a hash for Net::HTTP
   form_vars = form_vars.split('&').inject({}) {|memo,v| memo.merge({v.split('=').first => v.split('=').last}) }
   req.set_form_data(form_vars)
+  debugger
   res = Net::HTTP.new(url.host, url.port).start do |http|
     http.request(req)
   end
@@ -64,7 +65,7 @@ def sinpost url, domain, ip, form_vars
 
   case res
   when Net::HTTPSuccess     then transform_response res.body
-  when Net::HTTPRedirection then singet(URI.parse('http://' + ip + res['location'].gsub(request.env['rack.url_scheme'] + '://' + domain, '')), domain, ip, 9)
+  when Net::HTTPRedirection then singet(URI.parse('http://' + ip + res['location'].gsub(request.env['rack.url_scheme'] + '://' + domain, '')), ip, domain, 9)
   else transform_response res.body
   end
 end

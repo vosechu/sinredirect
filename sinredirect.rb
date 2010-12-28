@@ -20,7 +20,7 @@ end
 get '/internal/:ip/:domain/*' do |ip, domain, q|
   url = URI.parse('http://' + ip + '/' + q)
   return singet url, ip, domain
-enda
+end
 
 post '/internal/:ip/:domain/*' do |ip, domain, q|
   url = URI.parse('http://' + ip + '/' + q)
